@@ -35,11 +35,7 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
     private GestureDetector mGestureDetector;
     private boolean isAutoScale;
 
-    private boolean isCheckTopAndBottom = true;
-    private boolean isCheckLeftAndRight = true;
-
     private int mHorizontalPadding = 20;
-    private int mVerticalPadding;
 
     private float aspectRatio = 20.0f/30.0f;
 
@@ -113,7 +109,6 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
             initScale = scale;
             SCALE_MAX = initScale * 4;
             SCALE_MID = initScale *2;
-            mVerticalPadding = (getHeight() - (getWidth() - 2 * mHorizontalPadding)) / 2;
 
             mScaleMatrix.postTranslate((width - dw) / 2, (height - dh) /2);
             mScaleMatrix.postScale(scale, scale, getWidth() / 2, getHeight() / 2);
@@ -209,15 +204,6 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
 
                 RectF rectF = getMatrixRectF();
                 if (getDrawable() != null) {
-                    isCheckLeftAndRight = isCheckTopAndBottom = true;
-                    if (rectF.width() < width) {
-                        dx = 0;
-                        isCheckLeftAndRight = false;
-                    }
-                    if (rectF.height() < getHeight() - (2 * heightAspect)) {
-                        dy = 0;
-                        isCheckTopAndBottom = false;
-                    }
                     mScaleMatrix.postTranslate(dx, dy);
                     checkMatrixBounds();
                     setImageMatrix(mScaleMatrix);
@@ -255,28 +241,28 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
 
     private void checkBorderAndCenterWhenScale() {
         RectF rect = getMatrixRectF();
+        RectF checkRect = getBoundingBoxRect();
         float deltaX = 0;
         float deltaY = 0;
 
         int width = getWidth();
         int height = getHeight();
 
-        if (rect.width() >= width - 2 * mHorizontalPadding) {
-            if (rect.left > mHorizontalPadding) {
-                deltaX = -rect.left + mHorizontalPadding;
+        if (rect.width() >= checkRect.width()) {
+            if (rect.left > checkRect.left) {
+                deltaX = -rect.left + checkRect.left;
             }
-            if (rect.right < width - mHorizontalPadding) {
-                deltaX = width - rect.right - mHorizontalPadding;
+            if (rect.right < checkRect.right) {
+                deltaX = rect.right - checkRect.right;
             }
-
         }
 
-        if (rect.height() >= height - 2 * mVerticalPadding) {
+        if (rect.height() >= checkRect.height()) {
             if (rect.top > 0) {
-                deltaY = -rect.top + mVerticalPadding;
+                deltaY = -rect.top + checkRect.top;
             }
-            if (rect.bottom < height - mVerticalPadding) {
-                deltaY = height - rect.bottom - mVerticalPadding;
+            if (rect.bottom < checkRect.bottom) {
+                deltaY = rect.bottom - checkRect.bottom;
             }
         }
 
@@ -312,16 +298,17 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
 
         RectF checkRect = getBoundingBoxRect();
 
-        if (rect.top > checkRect.top && isCheckTopAndBottom) {
+        if (rect.top > checkRect.top) {
             deltaY = -rect.top + checkRect.top;
         }
-        if (rect.bottom < checkRect.bottom  && isCheckTopAndBottom) {
-            deltaY = viewHeight - rect.bottom - checkRect.bottom;
+        if (rect.bottom < checkRect.bottom) {
+            deltaY = viewHeight - rect.bottom - checkRect.top;
+
         }
-        if (rect.left > checkRect.left && isCheckLeftAndRight) {
+        if (rect.left > checkRect.left) {
             deltaX = -rect.left + checkRect.left;
         }
-        if (rect.right < checkRect.right && isCheckLeftAndRight) {
+        if (rect.right < checkRect.right) {
             deltaX = viewWidth - rect.right - checkRect.left;
         }
         mScaleMatrix.postTranslate(deltaX, deltaY);
