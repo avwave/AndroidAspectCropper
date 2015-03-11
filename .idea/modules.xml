@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/AndroidAspectCropper.iml" filepath="$PROJECT_DIR$/AndroidAspectCropper.iml" />
+      <module fileurl="file://$PROJECT_DIR$/androidaspectcrop/androidaspectcrop.iml" filepath="$PROJECT_DIR$/androidaspectcrop/androidaspectcrop.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

@@ -1,18 +1,19 @@
 package avwave.androidaspectcropper;
 
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
-import android.support.v4.app.Fragment;
+import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Bundle;
-import android.view.LayoutInflater;
+import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.os.Build;
+
+import avwave.androidaspectcropper.fragment.CropFragment;
+import avwave.androidaspectcropper.fragment.PhotoPickerFragment;
 
 
-public class DemoMainActivity extends ActionBarActivity {
+public class DemoMainActivity extends ActionBarActivity
+        implements PhotoPickerFragment.OnFragmentInteractionListener, CropFragment.OnFragmentInteractionListener
+{
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,7 +21,7 @@ public class DemoMainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_demo_main);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
+                    .add(R.id.container, new PhotoPickerFragment())
                     .commit();
         }
     }
@@ -48,19 +49,16 @@ public class DemoMainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
+    @Override
+    public void onCropImage(String pathToCroppedImage, Rect croppedRectArea) {
 
-        public PlaceholderFragment() {
-        }
+    }
 
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_demo_main, container, false);
-            return rootView;
-        }
+    @Override
+    public void onPhotoPicked(Uri uri, float targetWidth, float targetHeight, boolean isCropRect) {
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.container, CropFragment.newInstance(uri.toString(), targetWidth, targetHeight, isCropRect))
+                .addToBackStack(null)
+                .commit();
     }
 }
