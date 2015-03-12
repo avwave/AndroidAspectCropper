@@ -19,12 +19,12 @@ import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 
 import avwave.androidaspectcrop.utils.DecodeUtils;
+import avwave.androidaspectcrop.utils.PrintUtils;
 
 public class CropZoomableImageView extends ImageView implements ScaleGestureDetector.OnScaleGestureListener,
-        View.OnTouchListener, ViewTreeObserver.OnGlobalLayoutListener{
+        View.OnTouchListener, ViewTreeObserver.OnGlobalLayoutListener {
 
     private float SCALE_MAX = 4.0f;
-    private float SCALE_MID = 2.0f;
 
     private float initScale = 1.0f;
 
@@ -37,13 +37,16 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
     private final Matrix mScaleMatrix = new Matrix();
 
     private GestureDetector mGestureDetector;
-    private boolean isAutoScale;
 
     private int mHorizontalPadding = 20;
 
-    private float aspectRatio = 20.0f/30.0f;
+    private float aspectRatio = 20.0f / 30.0f;
 
     private int initBitmapWidth, initBitmapHeight;
+
+    private Uri srcBitmapUri;
+    private PrintUtils printUtil;
+
 
     public void setInitBitmapWidth(int initBitmapWidth) {
         this.initBitmapWidth = initBitmapWidth;
@@ -70,33 +73,17 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
         mHorizontalPadding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
                 mHorizontalPadding, getResources().getDisplayMetrics());
 
-        mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
-            @Override
-            public boolean onDoubleTap(MotionEvent e) {
-                if (isAutoScale == true) {
-                    return true;
-                }
-                float x = e.getX();
-                float y = e.getY();
-                if (getScale() < SCALE_MID) {
-                    CropZoomableImageView.this.postDelayed(new AutoScaleRunnable(SCALE_MID, x, y), 16);
-                    isAutoScale = true;
-                } else if (getScale() >= SCALE_MID && getScale() <= SCALE_MAX) {
-                    CropZoomableImageView.this.postDelayed(new AutoScaleRunnable(SCALE_MAX, x, y), 16);
-                    isAutoScale = true;
-                } else {
-                    CropZoomableImageView.this.postDelayed(new AutoScaleRunnable(initScale, x, y), 16);
-                    isAutoScale = true;
-                }
-                return true;
-            }
-        });
-
-
+        mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener());
     }
 
     public void setAspectRatio(float aspectRatio) {
         this.aspectRatio = aspectRatio;
+    }
+
+    public void setSrcBitmap(Uri srcBitmapUri, int dpi, int targetWidth, int targetHeight) {
+
+        this.srcBitmapUri = srcBitmapUri;
+        printUtil = new PrintUtils(getContext(), dpi, targetWidth, targetHeight, srcBitmapUri);
     }
 
     public void reLayout() {
@@ -118,13 +105,12 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
 
             float scale = 1.0f;
 
-            scale = Math.max(width * 1.0f / dw, width * 1.0f /dh);
+            scale = Math.max(width * 1.0f / dw, width * 1.0f / dh);
 
             initScale = scale;
             SCALE_MAX = initScale * 4;
-            SCALE_MID = initScale *2;
 
-            mScaleMatrix.postTranslate((width - dw) / 2, (height - dh) /2);
+            mScaleMatrix.postTranslate((width - dw) / 2, (height - dh) / 2);
             mScaleMatrix.postScale(scale, scale, getWidth() / 2, getHeight() / 2);
             setImageMatrix(mScaleMatrix);
             once = false;
@@ -134,7 +120,6 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
 
     public void setSCALE_MAX(float SCALE_MAX) {
         this.SCALE_MAX = SCALE_MAX;
-        this.SCALE_MID = SCALE_MAX / 2;
     }
 
     public Bitmap clip() {
@@ -152,8 +137,16 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
     public Bitmap clipOriginalImageAtURI(Uri photoURI) {
         Bitmap largeBitmap = DecodeUtils.decode(getContext(), photoURI, -1, -1);
 
-        float scale = (float)largeBitmap.getWidth() / (float)initBitmapWidth;
+        float scale = (float) largeBitmap.getHeight() / (float) initBitmapHeight;
+        Rect cropRect = getFinalCropRect(scale);
 
+        Log.i("LTRB:", cropRect.flattenToString() + " : " + cropRect.width() + "x" + cropRect.height());
+
+        return Bitmap.createBitmap(largeBitmap, cropRect.left, cropRect.top, cropRect.width(), cropRect.height());
+
+    }
+
+    private Rect getFinalCropRect(float scale) {
         RectF checkRect = getBoundingBoxRect();
         RectF scaledRect = new RectF();
 
@@ -166,15 +159,14 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
 
         Rect cropRect = new Rect();
         scaledRect.round(cropRect);
-
-        Log.i("LTRB:", cropRect.flattenToString() + " : " + cropRect.width() + "x" + cropRect.height());
-
-        return Bitmap.createBitmap(largeBitmap, cropRect.left, cropRect.top, cropRect.width(), cropRect.height());
-
+        return cropRect;
     }
 
     @Override
     public boolean onScale(ScaleGestureDetector detector) {
+        float bitmapScale = (float) printUtil.getSrcBitmapWidth() / (float) initBitmapWidth;
+        Rect cropRect = getFinalCropRect(bitmapScale);
+
         float scale = getScale();
         float scaleFactor = detector.getScaleFactor();
 
@@ -182,19 +174,32 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
             return true;
         }
 
-        if ((scale < SCALE_MAX && scaleFactor > 1.0f) || (scale > initScale && scaleFactor < 1.0f)) {
-            if (scaleFactor * scale  < initScale) {
-                scaleFactor = initScale / scale;
-            }
+        SCALE_MAX = printUtil.getMaxScale();
 
-            if (scaleFactor * scale > SCALE_MAX) {
-                scaleFactor = SCALE_MAX / scale;
-            }
+        if (scaleFactor * scale < initScale) {
+            scaleFactor = initScale / scale;
+        }
 
+//        if (scaleFactor * scale > SCALE_MAX) {
+//            scaleFactor = SCALE_MAX / scale;
+//        }
+
+        if (scaleFactor > 1 && !printUtil.isRectBigEnough(cropRect)) {
+            Log.i("SCALEFINAL", String.valueOf(scale));
+            scaleFactor = 1.0f;
+        } else {
             mScaleMatrix.postScale(scaleFactor, scaleFactor, detector.getFocusX(), detector.getFocusY());
             checkBorderAndCenterWhenScale();
-            setImageMatrix(mScaleMatrix);
         }
+
+
+        Log.i("IMSCL", "source(" + initBitmapWidth + ", " + initBitmapHeight + ")");
+
+
+
+        setImageMatrix(mScaleMatrix);
+
+        invalidate();
         return true;
     }
 
@@ -205,18 +210,14 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
 
     @Override
     public void onScaleEnd(ScaleGestureDetector detector) {
-
+        onScale(detector);
     }
 
     private float mLastX, mLastY;
     private int mLastPointerCount;
-    private boolean mIsCanDrag;
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        if (mGestureDetector.onTouchEvent(event)) {
-            return true;
-        }
         mScaleGestureDetector.onTouchEvent(event);
         float x = 0, y = 0;
 
@@ -363,46 +364,7 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
         checkRect.top = ((getHeight() - heightAspect) / 2);
         checkRect.bottom = ((getHeight() + heightAspect) / 2);
         return checkRect;
-    }
 
 
-    private class AutoScaleRunnable implements Runnable {
-        static final float BIGGER = 1.07f;
-        static final float SMALLER = 0.93f;
-        private float mTargetScale;
-        private float tmpScale;
-
-        private float x;
-        private float y;
-
-        public AutoScaleRunnable(float targetScale, float x, float y) {
-            mTargetScale = targetScale;
-            this.x = x;
-            this.y = y;
-            if (getScale() < mTargetScale) {
-                tmpScale = BIGGER;
-            } else {
-                tmpScale = SMALLER;
-            }
-        }
-
-        @Override
-        public void run() {
-            mScaleMatrix.postScale(tmpScale, tmpScale, x, y);
-            checkBorderAndCenterWhenScale();
-            setImageMatrix(mScaleMatrix);
-
-            final float currentScale = getScale();
-
-            if(((tmpScale > 1f) && (currentScale < mTargetScale)) || ((tmpScale < 1f) && (mTargetScale < currentScale))) {
-                CropZoomableImageView.this.postDelayed(this, 16);
-            } else {
-                final float deltaScale = mTargetScale / currentScale;
-                mScaleMatrix.postScale(deltaScale, deltaScale, x, y);
-                checkBorderAndCenterWhenScale();
-                setImageMatrix(mScaleMatrix);
-                isAutoScale = false;
-            }
-        }
     }
 }

@@ -90,6 +90,7 @@ public class CropFragment extends Fragment {
         if (null != bitmap) {
             cropView.setImageBitmap(bitmap);
             cropView.setCropDimensions(targetWidth, targetHeight, isCropRect);
+            cropView.setSrcBitmap(photoURI, 72, (int)targetWidth, (int)targetHeight);
 
         }
         else {

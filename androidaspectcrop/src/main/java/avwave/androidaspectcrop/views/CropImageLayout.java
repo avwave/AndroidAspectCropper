@@ -47,6 +47,10 @@ public class CropImageLayout extends RelativeLayout {
         return mZoomImageView.clipOriginalImageAtURI(uri);
     }
 
+    public void setSrcBitmap(Uri srcBitmapUri, int dpi, int targetWidth, int targetHeight) {
+        mZoomImageView.setSrcBitmap(srcBitmapUri, dpi, targetWidth, targetHeight);
+    }
+
     public void setImageBitmap(Bitmap bitmap) {
         mZoomImageView.setImageBitmap(bitmap);
         mZoomImageView.setInitBitmapHeight(bitmap.getHeight());
@@ -56,7 +60,7 @@ public class CropImageLayout extends RelativeLayout {
     }
 
     public void setCropDimensions(float x, float y, boolean isRect) {
-        aspectRatio = x/y;
+        aspectRatio = y/x;
         mClipImageView.setAspectRatio(aspectRatio);
         mClipImageView.setCropAreaRect(isRect);
         mClipImageView.invalidate();

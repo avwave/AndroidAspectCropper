@@ -11,6 +11,4 @@ public class PixelUtils {
         Resources r = Resources.getSystem();
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, r.getDisplayMetrics());
     }
-
-    
 }

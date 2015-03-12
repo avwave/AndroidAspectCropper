@@ -16,13 +16,13 @@
         <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="20x30"
+            android:text="15x20"
             android:id="@+id/aspect1Button"/>
 
         <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="70x40"
+            android:text="40x70"
             android:id="@+id/aspect2Button"/>
 
         <Button

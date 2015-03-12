@@ -54,7 +54,7 @@ public class PhotoPickerFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 isCropRect = true;
-                targetHeight = 30.0f;
+                targetHeight = 15.0f;
                 targetWidth = 20.0f;
                 photoPicker();
             }
