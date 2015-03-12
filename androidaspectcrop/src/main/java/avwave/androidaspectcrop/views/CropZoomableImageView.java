@@ -7,7 +7,9 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -15,6 +17,8 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
+
+import avwave.androidaspectcrop.utils.DecodeUtils;
 
 public class CropZoomableImageView extends ImageView implements ScaleGestureDetector.OnScaleGestureListener,
         View.OnTouchListener, ViewTreeObserver.OnGlobalLayoutListener{
@@ -38,6 +42,16 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
     private int mHorizontalPadding = 20;
 
     private float aspectRatio = 20.0f/30.0f;
+
+    private int initBitmapWidth, initBitmapHeight;
+
+    public void setInitBitmapWidth(int initBitmapWidth) {
+        this.initBitmapWidth = initBitmapWidth;
+    }
+
+    public void setInitBitmapHeight(int initBitmapHeight) {
+        this.initBitmapHeight = initBitmapHeight;
+    }
 
     public CropZoomableImageView(Context context) {
         this(context, null);
@@ -118,6 +132,11 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
         }
     }
 
+    public void setSCALE_MAX(float SCALE_MAX) {
+        this.SCALE_MAX = SCALE_MAX;
+        this.SCALE_MID = SCALE_MAX / 2;
+    }
+
     public Bitmap clip() {
         Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
@@ -127,6 +146,30 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
         getBoundingBoxRect().round(checkRect);
 
         return Bitmap.createBitmap(bitmap, checkRect.left, checkRect.top, checkRect.width(), checkRect.height());
+
+    }
+
+    public Bitmap clipOriginalImageAtURI(Uri photoURI) {
+        Bitmap largeBitmap = DecodeUtils.decode(getContext(), photoURI, -1, -1);
+
+        float scale = (float)largeBitmap.getWidth() / (float)initBitmapWidth;
+
+        RectF checkRect = getBoundingBoxRect();
+        RectF scaledRect = new RectF();
+
+        Matrix imageScaleMatrix = new Matrix(mScaleMatrix);
+
+        imageScaleMatrix.invert(imageScaleMatrix);
+        imageScaleMatrix.postScale(scale, scale);
+
+        imageScaleMatrix.mapRect(scaledRect, checkRect);
+
+        Rect cropRect = new Rect();
+        scaledRect.round(cropRect);
+
+        Log.i("LTRB:", cropRect.flattenToString() + " : " + cropRect.width() + "x" + cropRect.height());
+
+        return Bitmap.createBitmap(largeBitmap, cropRect.left, cropRect.top, cropRect.width(), cropRect.height());
 
     }
 
@@ -199,10 +242,6 @@ public class CropZoomableImageView extends ImageView implements ScaleGestureDete
                 float dx = x - mLastX;
                 float dy = y - mLastY;
 
-                int width = getWidth() - (mHorizontalPadding * 2);
-                int heightAspect = (int) Math.floor(width * aspectRatio);
-
-                RectF rectF = getMatrixRectF();
                 if (getDrawable() != null) {
                     mScaleMatrix.postTranslate(dx, dy);
                     checkMatrixBounds();

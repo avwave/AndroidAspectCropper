@@ -1,6 +1,8 @@
 package avwave.androidaspectcropper.fragment;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.net.Uri;
@@ -10,6 +12,7 @@ import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import avwave.androidaspectcrop.utils.DecodeUtils;
 import avwave.androidaspectcrop.views.CropImageLayout;
@@ -86,7 +89,8 @@ public class CropFragment extends Fragment {
         cropView = (CropImageLayout) rootView.findViewById(R.id.clip);
         if (null != bitmap) {
             cropView.setImageBitmap(bitmap);
-            cropView.setCropDimensions(targetWidth, targetHeight);
+            cropView.setCropDimensions(targetWidth, targetHeight, isCropRect);
+
         }
         else {
             getFragmentManager().popBackStackImmediate();
@@ -103,7 +107,25 @@ public class CropFragment extends Fragment {
     }
 
     private void doCrop() {
+        Bitmap b = cropView.clipOriginalImageAtURI(photoURI);
+        AlertDialog.Builder alertadd = new AlertDialog.Builder(
+                getActivity());
+        alertadd.setTitle("Android");
 
+        LayoutInflater factory = LayoutInflater.from(getActivity());
+        final View view = factory.inflate(R.layout.dialog_main, null);
+
+        ImageView image= (ImageView) view.findViewById(R.id.imageView);
+        image.setImageBitmap(b);
+
+        alertadd.setView(view);
+        alertadd.setNeutralButton("ok", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dlg, int sumthin) {
+
+            }
+        });
+
+        alertadd.show();
     }
 
     @Override

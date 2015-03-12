@@ -45,6 +45,9 @@ public class DecodeUtils {
             int sampleSize;
             if( maxW < 0 || maxH < 0 ) {
                 sampleSize = 1;
+
+                maxW = imageSize[0];
+                maxH = imageSize[1];
             } else {
                 sampleSize = computeSampleSize( imageSize[0], imageSize[1], (int) ( maxW * 1.2 ), (int) ( maxH * 1.2 ), orientation );
             }

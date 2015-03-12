@@ -16,6 +16,7 @@ import android.view.View;
 public class CropImageBorderView extends View {
 
     private float aspectRatio = 20.0f/30.0f;
+    private boolean isCropAreaRect = true;
     private int mHorizontalPadding = 20;
     private int mBorderColor = Color.parseColor("#FFFFFF");
     private int mBorderWidth = 1;
@@ -50,9 +51,14 @@ public class CropImageBorderView extends View {
         mEraserPaint.setAntiAlias(true);
     }
 
+    public void setCropAreaRect(boolean isCropAreaRect) {
+        this.isCropAreaRect = isCropAreaRect;
+    }
+
     public void setAspectRatio(float aspectRatio) {
         this.aspectRatio = aspectRatio;
         invalidate();
+
     }
 
     @Override
@@ -71,10 +77,16 @@ public class CropImageBorderView extends View {
 
         mBitmap.eraseColor(Color.TRANSPARENT);
         mCanvas.drawColor(Color.parseColor("#66ffffff"));
-        mCanvas.drawRect(rect, mEraserPaint);
+
+        if (isCropAreaRect) {
+            mCanvas.drawRect(rect, mEraserPaint);
+            canvas.drawRect(rect, mPaint);
+        } else {
+            mCanvas.drawCircle(rect.centerX(), rect.centerY(), rect.width() / 2, mEraserPaint);
+            canvas.drawCircle(rect.centerX(), rect.centerY(), rect.width() / 2, mPaint);
+        }
         canvas.drawBitmap(mBitmap, 0, 0, null);
 
-        canvas.drawRect(rect, mPaint);
     }
 
     @Override

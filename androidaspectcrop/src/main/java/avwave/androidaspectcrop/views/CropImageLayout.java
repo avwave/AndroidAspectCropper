@@ -3,6 +3,7 @@ package avwave.androidaspectcrop.views;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.util.AttributeSet;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
@@ -42,19 +43,27 @@ public class CropImageLayout extends RelativeLayout {
         return mZoomImageView.clip();
     }
 
+    public Bitmap clipOriginalImageAtURI(Uri uri) {
+        return mZoomImageView.clipOriginalImageAtURI(uri);
+    }
+
     public void setImageBitmap(Bitmap bitmap) {
         mZoomImageView.setImageBitmap(bitmap);
+        mZoomImageView.setInitBitmapHeight(bitmap.getHeight());
+        mZoomImageView.setInitBitmapWidth(bitmap.getWidth());
         mZoomImageView.reLayout();
         mZoomImageView.invalidate();
     }
 
-    public void setCropDimensions(float x, float y) {
+    public void setCropDimensions(float x, float y, boolean isRect) {
         aspectRatio = x/y;
         mClipImageView.setAspectRatio(aspectRatio);
+        mClipImageView.setCropAreaRect(isRect);
         mClipImageView.invalidate();
         mZoomImageView.setAspectRatio(aspectRatio);
         mZoomImageView.reLayout();
         mZoomImageView.invalidate();
+
     }
 
     public void setImagePath(String filePath) {
